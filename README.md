@@ -6,13 +6,14 @@
 [![Public Repo](https://img.shields.io/badge/repo-public-lightgrey)](./README.md)
 [![Support via Stripe](https://img.shields.io/badge/support-stripe-635bff?logo=stripe&logoColor=white)](https://buy.stripe.com/8x200i8bSgVe3Vl3g8bfO00)
 
-Curated GitHub Pages directory of **top AI companies, top engineering companies, and product-first big tech organizations** with a **D3 treemap**, key facts, and official engineering or AI study links.
+Curated GitHub Pages directory of **top AI companies, top engineering companies, and product-first big tech organizations** with **D3 radial tree and treemap views**, key facts, and official engineering or AI study links.
 
 Created by **[Diego Marinho](https://dmoliveira.github.io/my-cv-public/cv/human/)**.
 
 ## What this includes
 
-- D3.js treemap grouped by business type and sub-type
+- D3.js radial tree for hierarchy-first exploration
+- D3.js treemap for denser category scanning
 - search by partial company name or keyword
 - filters by country, business type, sub-type, and field tags
 - company facts such as founded year, CEO, HQ, and employee scale bucket
@@ -40,13 +41,14 @@ make validate
 - this is a curated directory, not a formal financial ranking
 - default inclusion bar is companies with 500+ employees and strong engineering or AI relevance
 - companies are grouped by `business type → sub-type → company`
-- tile sizes are equal in v1 to avoid inventing an opaque score
+- the radial tree emphasizes hierarchy clarity while the treemap emphasizes dense scanning
+- treemap tile sizes are equal to avoid inventing an opaque score
 - facts should be supported by official public sources whenever possible
 
 ## Project structure
 
-- `docs/index.html`: main directory and treemap UI
-- `docs/app.js`: D3 treemap logic, filters, and company details
+- `docs/index.html`: main directory and visualization switcher UI
+- `docs/app.js`: D3 radial tree + treemap logic, filters, and company details
 - `docs/styles.css`: visual system and responsive layout
 - `docs/data/companies.json`: canonical company dataset
 - `docs/data/taxonomy.json`: controlled taxonomy values

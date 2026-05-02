@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Top AI and Engineering Companies | D3 Treemap Directory</title>
+    <title>Top AI and Engineering Companies | D3 Radial Tree and Treemap Directory</title>
     <meta
       name="description"
-      content="Curated GitHub Pages directory of top AI and engineering companies with D3 treemap exploration, company facts, engineering blogs, AI blogs, and filters by country and business type."
+      content="Curated GitHub Pages directory of top AI and engineering companies with D3 radial tree and treemap exploration, company facts, engineering blogs, AI blogs, and filters by country and business type."
     />
     <meta
       name="keywords"
@@ -15,7 +15,7 @@
     <meta property="og:title" content="Top AI and Engineering Companies" />
     <meta
       property="og:description"
-      content="Explore top AI and engineering companies with a D3 treemap, company facts, and official engineering or AI study links."
+      content="Explore top AI and engineering companies with a D3 radial tree, treemap, company facts, and official engineering or AI study links."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://dmoliveira.github.io/top-ai-engineering-companies/" />
@@ -41,7 +41,7 @@
           <p class="eyebrow">GitHub Pages directory</p>
           <h1>Top AI and Engineering Companies</h1>
           <p class="lede">
-            Explore top AI companies, big tech companies, and product-first engineering organizations through a searchable D3 treemap with official engineering blogs, AI blogs, and core facts.
+            Explore top AI companies, big tech companies, and product-first engineering organizations through searchable D3 radial tree and treemap views with official engineering blogs, AI blogs, and core facts.
           </p>
         </div>
         <nav class="top-nav" aria-label="Primary">
@@ -59,7 +59,7 @@
           <p class="eyebrow">Study companies by type</p>
           <h2>Top engineering companies for learning, research, and career study</h2>
           <p>
-            The treemap groups companies as <strong>business type → sub-type → company</strong>. Click a category to zoom, click a company tile to inspect facts, and use filters to narrow by country, field, or partial company name.
+            The visualizations group companies as <strong>business type → sub-type → company</strong>. Use the radial tree for hierarchy-first exploration, switch to treemap for denser scanning, and use filters to narrow by country, field, or partial company name.
           </p>
         </div>
         <div class="hero-stats" id="hero-stats">
@@ -119,16 +119,22 @@
         <div class="active-summary" id="active-summary" aria-live="polite">Loading company directory…</div>
       </section>
 
-      <section class="treemap-card" aria-labelledby="treemap-heading">
-        <div class="treemap-header">
+      <section class="viz-card" aria-labelledby="viz-heading">
+        <div class="viz-header">
           <div>
-            <p class="eyebrow">Treemap</p>
-            <h2 id="treemap-heading">D3 treemap of top AI and engineering companies</h2>
+            <p class="eyebrow" id="viz-eyebrow">Radial tree</p>
+            <h2 id="viz-heading">D3 radial tree of top AI and engineering companies</h2>
           </div>
-          <div class="breadcrumb" id="breadcrumb">All companies</div>
+          <div class="viz-controls">
+            <div class="view-switcher" aria-label="Visualization mode">
+              <button id="view-radial" class="view-button is-active" type="button" aria-pressed="true" data-view-mode="radial">Radial tree</button>
+              <button id="view-treemap" class="view-button" type="button" aria-pressed="false" data-view-mode="treemap">Treemap</button>
+            </div>
+            <div class="breadcrumb" id="breadcrumb">All companies</div>
+          </div>
         </div>
-        <div id="legend" class="legend" aria-label="Treemap legend"></div>
-        <div id="treemap" class="treemap" role="region" aria-label="Interactive treemap of top AI and engineering companies"></div>
+        <div id="legend" class="legend" aria-label="Visualization legend"></div>
+        <div id="visualization" class="viz-surface" role="region" aria-label="Interactive company visualization"></div>
       </section>
 
       <aside class="details-card" aria-labelledby="details-heading">
@@ -140,7 +146,7 @@
         </div>
         <div id="details-panel" class="details-panel">
           <p class="empty-state">
-            Click a company tile to inspect core facts, official engineering blogs, AI blogs, and career or website links.
+            Click a company node or tile to inspect core facts, official engineering blogs, AI blogs, and career or website links.
           </p>
         </div>
       </aside>
