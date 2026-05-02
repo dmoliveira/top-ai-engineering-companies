@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Top AI and Engineering Companies icon">
+  <rect width="128" height="128" rx="24" fill="#07111f"/>
+  <rect x="16" y="18" width="44" height="44" rx="10" fill="#60a5fa"/>
+  <rect x="68" y="18" width="44" height="24" rx="8" fill="#34d399"/>
+  <rect x="68" y="48" width="44" height="44" rx="10" fill="#f59e0b"/>
+  <rect x="16" y="68" width="44" height="24" rx="8" fill="#a78bfa"/>
+  <rect x="16" y="98" width="96" height="14" rx="7" fill="#e5eefc" opacity="0.9"/>
+</svg>
