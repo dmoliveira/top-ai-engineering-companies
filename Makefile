@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: serve validate check
+.PHONY: serve validate build-pages check
 
 serve:
 	python3 -m http.server 8000 -d docs
@@ -8,4 +8,7 @@ serve:
 validate:
 	python3 scripts/validate_data.py
 
-check: validate
+build-pages:
+	python3 scripts/build_company_pages.py
+
+check: validate build-pages

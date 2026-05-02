@@ -15,6 +15,7 @@ TAXONOMY_PATH = ROOT / "docs" / "data" / "taxonomy.json"
 HTTPS_RE = re.compile(r"^https://")
 ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 HTML_RE = re.compile(r"[<>]")
+SLUG_RE = re.compile(r"^[a-z0-9-]+$")
 REQUIRED_FIELDS = {
     "id",
     "name",
@@ -62,6 +63,8 @@ def main() -> int:
             errors.append(f"duplicate id: {company_id}")
         else:
             seen_ids.add(company_id)
+        if not isinstance(company_id, str) or not SLUG_RE.match(company_id):
+            errors.append(f"invalid id slug: {company_id}")
 
         business_type = company.get("business_type")
         if business_type not in allowed_types:
