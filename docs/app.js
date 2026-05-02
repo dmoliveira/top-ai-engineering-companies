@@ -405,7 +405,7 @@ function renderTreemap(root) {
     }
   });
 
-  elements.breadcrumb.textContent = "All companies · click a category to focus and a company to inspect";
+  updateBreadcrumb();
   elements.visualizationHost.appendChild(svg.node());
 }
 
@@ -444,6 +444,8 @@ function renderRadialTree(root) {
   const group = svg.append("g").attr("transform", `scale(${state.radialScale})`);
   const ringCount = 5;
   const rings = d3.range(1, ringCount + 1).map((index) => (outerRadius / ringCount) * index);
+  const selectedPathKeys = getSelectedPathKeys(layoutRoot);
+  const hasSelection = selectedPathKeys.size > 0;
 
   group
     .append("g")
@@ -477,7 +479,13 @@ function renderRadialTree(root) {
     .selectAll("path")
     .data(layoutRoot.links())
     .join("path")
-    .attr("class", (link) => `radial-link radial-link--depth-${link.target.depth}`)
+    .attr(
+      "class",
+      (link) =>
+        `radial-link radial-link--depth-${link.target.depth} ${
+          selectedPathKeys.has(nodeKey(link.target)) ? "radial-link--selected-path" : ""
+        } ${hasSelection && !selectedPathKeys.has(nodeKey(link.target)) ? "radial-link--dimmed" : ""}`
+    )
     .attr("d", d3.linkRadial().angle((d) => d.x).radius((d) => d.y));
 
   const nodes = group
@@ -490,6 +498,8 @@ function renderRadialTree(root) {
       (node) =>
         `radial-node radial-node--depth-${node.depth} ${node.children ? "node--branch" : "node--leaf"} ${
           node.data.companyId === state.selectedCompanyId ? "radial-node--selected" : ""
+        } ${selectedPathKeys.has(nodeKey(node)) ? "radial-node--selected-path" : ""} ${
+          hasSelection && !selectedPathKeys.has(nodeKey(node)) ? "radial-node--dimmed" : ""
         }`
     )
     .attr("transform", (node) => `rotate(${(node.x * 180) / Math.PI - 90}) translate(${node.y},0)`)
@@ -519,9 +529,17 @@ function renderRadialTree(root) {
     .attr("filter", (node) => (node.depth <= 1 || node.data.companyId === state.selectedCompanyId ? "url(#radial-node-glow)" : null));
 
   nodes
-    .filter((node) => node.depth < 3 || shouldShowCompanyLabels())
+    .filter((node) => node.depth < 3 || shouldShowCompanyLabels() || node.data.companyId === state.selectedCompanyId)
     .append("text")
-    .attr("class", (node) => `radial-label radial-label--depth-${node.depth}`)
+    .attr(
+      "class",
+      (node) =>
+        `radial-label radial-label--depth-${node.depth} ${
+          node.data.companyId === state.selectedCompanyId ? "radial-label--selected" : ""
+        } ${selectedPathKeys.has(nodeKey(node)) ? "radial-label--selected-path" : ""} ${
+          hasSelection && !selectedPathKeys.has(nodeKey(node)) ? "radial-label--dimmed" : ""
+        }`
+    )
     .attr("dy", "0.31em")
     .attr("x", (node) => (node.x < Math.PI ? 11 : -11))
     .attr("text-anchor", (node) => (node.x < Math.PI ? "start" : "end"))
@@ -529,7 +547,7 @@ function renderRadialTree(root) {
     .attr("font-weight", (node) => (node.children ? 680 : 440))
     .text((node) => radialLabel(node));
 
-  elements.breadcrumb.textContent = "All companies · follow business type → sub-type → company";
+  updateBreadcrumb();
   elements.visualizationHost.appendChild(svg.node());
 }
 
@@ -587,6 +605,38 @@ function centerHubLabel(root) {
   return root?.data?.name === "All companies" ? "Companies" : trimLabel(root?.data?.name ?? "Directory", 10);
 }
 
+function nodeKey(node) {
+  return node
+    .ancestors()
+    .reverse()
+    .map((item) => item.data.name)
+    .join(" > ");
+}
+
+function getSelectedPathKeys(root) {
+  if (!state.selectedCompanyId) return new Set();
+  const selectedNode = root.descendants().find((node) => node.data.companyId === state.selectedCompanyId);
+  if (!selectedNode) return new Set();
+  return new Set(selectedNode.ancestors().map((node) => nodeKey(node)));
+}
+
+function updateBreadcrumb() {
+  const parts = ["All companies"];
+  if (state.filters.businessType) parts.push(state.filters.businessType);
+  if (state.filters.subType) parts.push(state.filters.subType);
+  const selected = state.companies.find((company) => company.id === state.selectedCompanyId);
+  if (selected) {
+    if (!state.filters.businessType || state.filters.businessType !== selected.business_type) {
+      parts.push(selected.business_type);
+    }
+    if (!state.filters.subType || state.filters.subType !== selected.sub_type[0]) {
+      parts.push(selected.sub_type[0]);
+    }
+    parts.push(selected.name);
+  }
+  elements.breadcrumb.textContent = parts.join(" → ");
+}
+
 function showTooltip(event, node) {
   const isLeaf = !node.children && node.data.company;
   const meta = isLeaf ? `${node.data.company.business_type} · ${node.data.company.sub_type[0]} · ${node.data.company.country}` : `${node.value} companies`;
@@ -622,6 +672,7 @@ function handleNodeClick(node) {
   }
 
   if (node.depth === 1) {
+    state.selectedCompanyId = null;
     state.filters.businessType = node.data.name;
     state.filters.subType = "";
     applyFilters();
@@ -629,6 +680,7 @@ function handleNodeClick(node) {
   }
 
   if (node.depth === 2) {
+    state.selectedCompanyId = null;
     state.filters.businessType = node.parent.data.name;
     state.filters.subType = node.data.name;
     applyFilters();
