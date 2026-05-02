@@ -114,7 +114,7 @@ h1 {
 
 .hero-card,
 .controls-card,
-.treemap-card,
+.viz-card,
 .details-card,
 .study-card,
 .content-card {
@@ -126,7 +126,7 @@ h1 {
 
 .hero-card,
 .controls-card,
-.treemap-card,
+.viz-card,
 .details-card,
 .study-card,
 .content-card {
@@ -170,7 +170,7 @@ h1 {
 }
 
 .controls-card,
-.treemap-card,
+.viz-card,
 .study-card {
   grid-column: 1;
 }
@@ -184,7 +184,7 @@ h1 {
 }
 
 .controls-header,
-.treemap-header,
+.viz-header,
 .details-header,
 .section-header {
   display: flex;
@@ -238,6 +238,35 @@ select {
   margin-top: 0.95rem;
 }
 
+.viz-controls {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: end;
+}
+
+.view-switcher {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(7, 17, 31, 0.72);
+}
+
+.view-button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.65rem 0.9rem;
+  cursor: pointer;
+}
+
+.view-button.is-active {
+  background: rgba(96, 165, 250, 0.16);
+  color: var(--text);
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -264,7 +293,7 @@ select {
   font-size: 0.95rem;
 }
 
-.treemap {
+.viz-surface {
   min-height: 700px;
   border-radius: 18px;
   overflow: hidden;
@@ -272,7 +301,7 @@ select {
   border: 1px solid var(--border);
 }
 
-.treemap svg {
+.viz-surface svg {
   width: 100%;
   height: 100%;
   display: block;
@@ -296,6 +325,32 @@ select {
 .node text {
   pointer-events: none;
   fill: #f8fbff;
+}
+
+.radial-link {
+  fill: none;
+  stroke: rgba(159, 178, 206, 0.28);
+  stroke-width: 1.2;
+}
+
+.radial-node circle {
+  stroke: rgba(229, 238, 252, 0.28);
+  stroke-width: 1.2;
+}
+
+.radial-node text {
+  fill: #e5eefc;
+  font-size: 11px;
+}
+
+.radial-node--leaf text {
+  fill: rgba(229, 238, 252, 0.88);
+}
+
+.radial-node:hover circle,
+.radial-node:focus circle {
+  stroke: #ffffff;
+  stroke-width: 2.3;
 }
 
 .node--leaf:hover rect,
@@ -435,7 +490,7 @@ select {
 @media (max-width: 720px) {
   .shell--header,
   .controls-header,
-  .treemap-header,
+  .viz-header,
   .details-header,
   .section-header,
   .footer-grid {
@@ -448,7 +503,11 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .treemap {
+  .viz-surface {
     min-height: 540px;
+  }
+
+  .viz-controls {
+    justify-items: start;
   }
 }

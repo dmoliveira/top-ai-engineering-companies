@@ -5,6 +5,7 @@ const state = {
   filteredCompanies: [],
   currentRoot: null,
   selectedCompanyId: null,
+  viewMode: "radial",
   filters: {
     search: "",
     country: "",
@@ -17,11 +18,14 @@ const state = {
 const palette = ["#4f46e5", "#0ea5e9", "#14b8a6", "#8b5cf6", "#f59e0b", "#ef4444", "#ec4899", "#22c55e", "#94a3b8"];
 const color = d3.scaleOrdinal().range(palette).unknown("#64748b");
 
-const treemapHost = document.getElementById("treemap");
+const visualizationHost = document.getElementById("visualization");
 const breadcrumb = document.getElementById("breadcrumb");
 const detailsPanel = document.getElementById("details-panel");
 const activeSummary = document.getElementById("active-summary");
 const legend = document.getElementById("legend");
+const vizEyebrow = document.getElementById("viz-eyebrow");
+const vizHeading = document.getElementById("viz-heading");
+const viewButtons = [...document.querySelectorAll("[data-view-mode]")];
 
 const inputs = {
   search: document.getElementById("search-input"),
@@ -38,6 +42,8 @@ const statCountries = document.getElementById("stat-countries");
 const tooltip = document.createElement("div");
 tooltip.className = "tooltip hidden";
 document.body.appendChild(tooltip);
+
+let resizeTimer = null;
 
 document.getElementById("reset-filters").addEventListener("click", () => {
   state.filters = { search: "", country: "", businessType: "", subType: "", tag: "" };
@@ -58,6 +64,19 @@ Object.entries(inputs).forEach(([key, input]) => {
   });
 });
 
+viewButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.viewMode = button.dataset.viewMode;
+    updateViewModeUI();
+    renderVisualization(state.currentRoot);
+  });
+});
+
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(() => renderVisualization(state.currentRoot), 120);
+});
+
 async function init() {
   const companies = await d3.json(DATA_URL);
   state.companies = companies;
@@ -65,6 +84,7 @@ async function init() {
   populateFilters(companies);
   updateHeroStats(companies);
   state.selectedCompanyId = companies[0]?.id ?? null;
+  updateViewModeUI();
   applyFilters();
 }
 
@@ -110,23 +130,23 @@ function applyFilters() {
       .join(" ")
       .toLowerCase();
 
-    const matchesSearch = !normalizedSearch || searchText.includes(normalizedSearch);
-    const matchesCountry = !country || company.country === country;
-    const matchesBusinessType = !businessType || company.business_type === businessType;
-    const matchesSubType = !subType || company.sub_type.includes(subType);
-    const matchesTag = !tag || company.tags.includes(tag);
-    return matchesSearch && matchesCountry && matchesBusinessType && matchesSubType && matchesTag;
+    return (
+      (!normalizedSearch || searchText.includes(normalizedSearch)) &&
+      (!country || company.country === country) &&
+      (!businessType || company.business_type === businessType) &&
+      (!subType || company.sub_type.includes(subType)) &&
+      (!tag || company.tags.includes(tag))
+    );
   });
 
   if (!state.filteredCompanies.some((company) => company.id === state.selectedCompanyId)) {
     state.selectedCompanyId = state.filteredCompanies[0]?.id ?? null;
   }
 
-  const hierarchy = buildHierarchy(state.filteredCompanies);
-  state.currentRoot = hierarchy;
+  state.currentRoot = buildHierarchy(state.filteredCompanies);
   renderSummary();
   renderLegend();
-  renderTreemap(hierarchy);
+  renderVisualization(state.currentRoot);
   renderDetails();
 }
 
@@ -182,15 +202,49 @@ function renderLegend() {
   });
 }
 
+function updateViewModeUI() {
+  const isRadial = state.viewMode === "radial";
+  vizEyebrow.textContent = isRadial ? "Radial tree" : "Treemap";
+  vizHeading.textContent = isRadial
+    ? "D3 radial tree of top AI and engineering companies"
+    : "D3 treemap of top AI and engineering companies";
+
+  viewButtons.forEach((button) => {
+    const active = button.dataset.viewMode === state.viewMode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function renderVisualization(root) {
+  if (!root) {
+    renderEmptyVisualization("Loading company directory…");
+    return;
+  }
+
+  if (state.viewMode === "radial") {
+    renderRadialTree(root);
+    return;
+  }
+
+  renderTreemap(root);
+}
+
+function renderEmptyVisualization(message) {
+  const empty = createElement("div", { className: "empty-state", text: message });
+  empty.style.padding = "1rem";
+  visualizationHost.replaceChildren(empty);
+}
+
 function renderTreemap(root) {
-  treemapHost.innerHTML = "";
+  visualizationHost.replaceChildren();
   if (!state.filteredCompanies.length) {
-    treemapHost.innerHTML = '<div class="empty-state" style="padding:1rem;">No companies match the current filters.</div>';
+    renderEmptyVisualization("No companies match the current filters.");
     breadcrumb.textContent = "No matches";
     return;
   }
 
-  const width = treemapHost.clientWidth || 960;
+  const width = visualizationHost.clientWidth || 960;
   const height = Math.max(540, Math.min(820, Math.round(width * 0.62)));
 
   d3.treemap().size([width, height]).paddingOuter(4).paddingTop((node) => (node.depth < 2 ? 28 : 18)).paddingInner(3)(root);
@@ -253,8 +307,79 @@ function renderTreemap(root) {
     }
   });
 
-  breadcrumb.textContent = "All companies · click a category to zoom and a company to inspect";
-  treemapHost.appendChild(svg.node());
+  breadcrumb.textContent = "All companies · click a category to filter and a company to inspect";
+  visualizationHost.appendChild(svg.node());
+}
+
+function renderRadialTree(root) {
+  visualizationHost.replaceChildren();
+  if (!state.filteredCompanies.length) {
+    renderEmptyVisualization("No companies match the current filters.");
+    breadcrumb.textContent = "No matches";
+    return;
+  }
+
+  const width = visualizationHost.clientWidth || 960;
+  const height = Math.max(640, Math.min(980, Math.round(width * 0.9)));
+  const outerRadius = Math.min(width, height) / 2 - 48;
+  const layoutRoot = root.copy();
+  d3.tree().size([2 * Math.PI, outerRadius]).separation((a, b) => (a.parent === b.parent ? 1 : 1.4) / Math.max(a.depth, 1))(layoutRoot);
+
+  const svg = d3.create("svg").attr("viewBox", [-width / 2, -height / 2, width, height]).attr("role", "presentation");
+  const group = svg.append("g");
+
+  group
+    .append("g")
+    .selectAll("path")
+    .data(layoutRoot.links())
+    .join("path")
+    .attr("class", "radial-link")
+    .attr("d", d3.linkRadial().angle((d) => d.x).radius((d) => d.y));
+
+  const nodes = group
+    .append("g")
+    .selectAll("g")
+    .data(layoutRoot.descendants().filter((node) => node.depth > 0))
+    .join("g")
+    .attr("class", (node) => `node radial-node ${node.children ? "node--branch radial-node--branch" : "node--leaf radial-node--leaf"}`)
+    .attr("transform", (node) => `rotate(${(node.x * 180) / Math.PI - 90}) translate(${node.y},0)`)
+    .attr("tabindex", 0)
+    .attr("role", "button")
+    .attr("aria-label", (node) => nodeAriaLabel(node))
+    .style("cursor", "pointer")
+    .on("click", (_, node) => handleNodeClick(node))
+    .on("keydown", (event, node) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleNodeClick(node);
+      }
+    })
+    .on("mousemove", (event, node) => showTooltip(event, node))
+    .on("focus", (event, node) => showTooltip(event, node))
+    .on("blur", hideTooltip)
+    .on("mouseleave", hideTooltip);
+
+  nodes
+    .append("circle")
+    .attr("r", (node) => (node.children ? (node.depth === 1 ? 6 : 4.5) : 3.5))
+    .attr("fill", (node) => color(resolveBusinessType(node)));
+
+  nodes
+    .filter((node) => node.depth < 3 || shouldShowCompanyLabels())
+    .append("text")
+    .attr("dy", "0.31em")
+    .attr("x", (node) => (node.x < Math.PI ? 10 : -10))
+    .attr("text-anchor", (node) => (node.x < Math.PI ? "start" : "end"))
+    .attr("transform", (node) => (node.x >= Math.PI ? "rotate(180)" : null))
+    .attr("font-weight", (node) => (node.children ? 650 : 450))
+    .text((node) => node.data.name);
+
+  breadcrumb.textContent = "All companies · use the radial tree to follow business type → sub-type → company";
+  visualizationHost.appendChild(svg.node());
+}
+
+function shouldShowCompanyLabels() {
+  return state.filteredCompanies.length <= 40 || Object.values(state.filters).some(Boolean);
 }
 
 function resolveBusinessType(node) {
@@ -279,6 +404,14 @@ function showTooltip(event, node) {
   tooltip.classList.remove("hidden");
   const clientX = event.clientX ?? 24;
   const clientY = event.clientY ?? 24;
+
+  if (event.type === "focus" && event.currentTarget instanceof Element) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + rect.width / 2 + 12}px`;
+    tooltip.style.top = `${rect.top + 12}px`;
+    return;
+  }
+
   tooltip.style.left = `${clientX + 14}px`;
   tooltip.style.top = `${clientY + 14}px`;
 }
@@ -296,7 +429,9 @@ function handleNodeClick(node) {
 
   if (node.depth === 1) {
     state.filters.businessType = node.data.name;
+    state.filters.subType = "";
     inputs.businessType.value = node.data.name;
+    inputs.subType.value = "";
     applyFilters();
     return;
   }
@@ -467,5 +602,5 @@ function updateHeroStats(companies) {
 init().catch((error) => {
   console.error(error);
   activeSummary.textContent = "Failed to load company data.";
-  treemapHost.innerHTML = '<div class="empty-state" style="padding:1rem;">Failed to load company data.</div>';
+  renderEmptyVisualization("Failed to load company data.");
 });
