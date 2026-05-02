@@ -505,7 +505,8 @@ p {
   border-radius: 18px;
   overflow: hidden;
   background:
-    radial-gradient(circle at center, rgba(116, 58, 237, 0.08), transparent 42%),
+    radial-gradient(circle at center, rgba(92, 168, 255, 0.12), transparent 26%),
+    radial-gradient(circle at center, rgba(176, 102, 255, 0.08), transparent 46%),
     linear-gradient(180deg, rgba(8, 17, 31, 0.98), rgba(10, 19, 35, 0.96));
   border: 1px solid var(--border);
 }
@@ -545,8 +546,15 @@ p {
   transition: transform 160ms ease, stroke 160ms ease, opacity 160ms ease;
 }
 
+.radial-node-halo,
+.radial-node-core,
+.radial-link,
+.radial-label {
+  transition: opacity 180ms ease, stroke 180ms ease, fill 180ms ease;
+}
+
 .node--selected rect,
-.radial-node--selected circle {
+.radial-node--selected .radial-node-core {
   stroke: #ffffff;
   stroke-width: 2.3;
 }
@@ -571,20 +579,114 @@ p {
 
 .node--leaf:hover rect,
 .node--branch:hover rect,
-.radial-node:hover circle,
-.radial-node:focus circle {
+.radial-node:hover .radial-node-core,
+.radial-node:focus .radial-node-core {
   stroke: rgba(255, 255, 255, 0.85);
 }
 
 .radial-link {
   fill: none;
-  stroke: rgba(138, 157, 185, 0.24);
+  stroke-linecap: round;
+}
+
+.radial-link--depth-1 {
+  stroke: rgba(103, 152, 245, 0.4);
+  stroke-width: 1.55;
+}
+
+.radial-link--depth-2 {
+  stroke: rgba(111, 135, 183, 0.28);
+  stroke-width: 1.15;
+}
+
+.radial-link--depth-3 {
+  stroke: rgba(124, 140, 168, 0.18);
+  stroke-width: 0.9;
+}
+
+.radial-grid,
+.radial-axes {
+  pointer-events: none;
+}
+
+.radial-guide-ring {
+  fill: none;
+  stroke: rgba(103, 124, 155, 0.18);
+  stroke-width: 1;
+  stroke-dasharray: 2 8;
+}
+
+.radial-axis {
+  stroke: rgba(96, 117, 148, 0.14);
+  stroke-width: 1;
+}
+
+.radial-center-glow {
+  fill: rgba(92, 168, 255, 0.12);
+}
+
+.radial-center-ring {
+  fill: rgba(9, 18, 31, 0.96);
+  stroke: rgba(102, 166, 255, 0.34);
+}
+
+.radial-center-ring--outer {
+  stroke-width: 1.8;
+}
+
+.radial-center-ring--inner {
+  stroke: rgba(176, 102, 255, 0.26);
   stroke-width: 1.2;
 }
 
-.radial-node text {
+.radial-center-label {
+  fill: #d6e8ff;
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.radial-node-halo {
+  mix-blend-mode: screen;
+}
+
+.radial-node-core {
+  stroke: rgba(237, 244, 255, 0.18);
+  stroke-width: 1.05;
+}
+
+.radial-node--depth-1 .radial-node-core {
+  stroke: rgba(237, 244, 255, 0.4);
+  stroke-width: 1.25;
+}
+
+.radial-label {
   fill: #edf4ff;
   font-size: 11px;
+  paint-order: stroke;
+  stroke: rgba(8, 17, 31, 0.94);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.radial-label--depth-1 {
+  font-size: 12px;
+  fill: #ffffff;
+}
+
+.radial-label--depth-2 {
+  fill: rgba(228, 238, 255, 0.94);
+}
+
+.radial-label--depth-3 {
+  font-size: 10px;
+  fill: rgba(212, 226, 247, 0.82);
+}
+
+.radial-node:hover .radial-node-halo,
+.radial-node:focus .radial-node-halo,
+.radial-node--selected .radial-node-halo {
+  opacity: 0.58;
 }
 
 .tooltip {

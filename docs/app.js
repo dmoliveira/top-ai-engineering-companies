@@ -419,19 +419,65 @@ function renderRadialTree(root) {
 
   const width = elements.visualizationHost.clientWidth || 960;
   const height = Math.max(540, Math.min(780, Math.round(width * 0.76)));
-  const outerRadius = (Math.min(width, height) / 2 - 58) / state.radialScale;
+  const outerRadius = Math.min(width, height) / 2 - 58;
   const layoutRoot = root.copy();
   d3.tree().size([2 * Math.PI, outerRadius]).separation((a, b) => (a.parent === b.parent ? 1 : 1.35) / Math.max(a.depth, 1))(layoutRoot);
 
   const svg = d3.create("svg").attr("viewBox", [-width / 2, -height / 2, width, height]).attr("role", "presentation");
+  const defs = svg.append("defs");
+  defs
+    .append("filter")
+    .attr("id", "radial-node-glow")
+    .attr("x", "-60%")
+    .attr("y", "-60%")
+    .attr("width", "220%")
+    .attr("height", "220%")
+    .html(`
+      <feGaussianBlur stdDeviation="4" result="blur"></feGaussianBlur>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.55 0"></feColorMatrix>
+      <feMerge>
+        <feMergeNode></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    `);
+
   const group = svg.append("g").attr("transform", `scale(${state.radialScale})`);
+  const ringCount = 5;
+  const rings = d3.range(1, ringCount + 1).map((index) => (outerRadius / ringCount) * index);
+
+  group
+    .append("g")
+    .attr("class", "radial-grid")
+    .selectAll("circle")
+    .data(rings)
+    .join("circle")
+    .attr("class", "radial-guide-ring")
+    .attr("r", (radius) => radius);
+
+  group
+    .append("g")
+    .attr("class", "radial-axes")
+    .selectAll("line")
+    .data(layoutRoot.children ?? [])
+    .join("line")
+    .attr("class", "radial-axis")
+    .attr("x1", 0)
+    .attr("y1", 0)
+    .attr("x2", (node) => Math.cos(node.x - Math.PI / 2) * (outerRadius + 10))
+    .attr("y2", (node) => Math.sin(node.x - Math.PI / 2) * (outerRadius + 10));
+
+  const centerHub = group.append("g").attr("class", "radial-center-hub");
+  centerHub.append("circle").attr("class", "radial-center-glow").attr("r", Math.max(outerRadius * 0.18, 54));
+  centerHub.append("circle").attr("class", "radial-center-ring radial-center-ring--outer").attr("r", 32);
+  centerHub.append("circle").attr("class", "radial-center-ring radial-center-ring--inner").attr("r", 20);
+  centerHub.append("text").attr("class", "radial-center-label").attr("text-anchor", "middle").attr("dy", "0.34em").text(centerHubLabel(root));
 
   group
     .append("g")
     .selectAll("path")
     .data(layoutRoot.links())
     .join("path")
-    .attr("class", "radial-link")
+    .attr("class", (link) => `radial-link radial-link--depth-${link.target.depth}`)
     .attr("d", d3.linkRadial().angle((d) => d.x).radius((d) => d.y));
 
   const nodes = group
@@ -439,7 +485,13 @@ function renderRadialTree(root) {
     .selectAll("g")
     .data(layoutRoot.descendants().filter((node) => node.depth > 0))
     .join("g")
-    .attr("class", (node) => `radial-node ${node.children ? "node--branch" : "node--leaf"} ${node.data.companyId === state.selectedCompanyId ? "radial-node--selected" : ""}`)
+    .attr(
+      "class",
+      (node) =>
+        `radial-node radial-node--depth-${node.depth} ${node.children ? "node--branch" : "node--leaf"} ${
+          node.data.companyId === state.selectedCompanyId ? "radial-node--selected" : ""
+        }`
+    )
     .attr("transform", (node) => `rotate(${(node.x * 180) / Math.PI - 90}) translate(${node.y},0)`)
     .attr("tabindex", 0)
     .attr("role", "button")
@@ -452,17 +504,30 @@ function renderRadialTree(root) {
     .on("blur", hideTooltip)
     .on("mouseleave", hideTooltip);
 
-  nodes.append("circle").attr("r", (node) => (node.children ? (node.depth === 1 ? 7 : 4.8) : 3.9)).attr("fill", (node) => color(resolveBusinessType(node)));
+  nodes
+    .append("circle")
+    .attr("class", "radial-node-halo")
+    .attr("r", (node) => haloRadius(node))
+    .attr("fill", (node) => color(resolveBusinessType(node)))
+    .attr("opacity", (node) => haloOpacity(node));
+
+  nodes
+    .append("circle")
+    .attr("class", "radial-node-core")
+    .attr("r", (node) => coreRadius(node))
+    .attr("fill", (node) => nodeFill(node))
+    .attr("filter", (node) => (node.depth <= 1 || node.data.companyId === state.selectedCompanyId ? "url(#radial-node-glow)" : null));
 
   nodes
     .filter((node) => node.depth < 3 || shouldShowCompanyLabels())
     .append("text")
+    .attr("class", (node) => `radial-label radial-label--depth-${node.depth}`)
     .attr("dy", "0.31em")
     .attr("x", (node) => (node.x < Math.PI ? 11 : -11))
     .attr("text-anchor", (node) => (node.x < Math.PI ? "start" : "end"))
     .attr("transform", (node) => (node.x >= Math.PI ? "rotate(180)" : null))
     .attr("font-weight", (node) => (node.children ? 680 : 440))
-    .text((node) => node.data.name);
+    .text((node) => radialLabel(node));
 
   elements.breadcrumb.textContent = "All companies · follow business type → sub-type → company";
   elements.visualizationHost.appendChild(svg.node());
@@ -482,6 +547,44 @@ function keyboardSelect(event, node) {
 function resolveBusinessType(node) {
   const ancestor = node.ancestors().find((item) => item.depth === 1);
   return ancestor?.data?.name ?? "Other";
+}
+
+function coreRadius(node) {
+  if (node.depth === 1) return 8;
+  if (node.depth === 2) return 5.2;
+  return node.data.companyId === state.selectedCompanyId ? 4.8 : 3.2;
+}
+
+function haloRadius(node) {
+  return coreRadius(node) + (node.depth === 1 ? 8 : node.depth === 2 ? 4.4 : 3.6);
+}
+
+function haloOpacity(node) {
+  if (node.data.companyId === state.selectedCompanyId) return 0.4;
+  if (node.depth === 1) return 0.22;
+  if (node.depth === 2) return 0.15;
+  return 0.08;
+}
+
+function nodeFill(node) {
+  const base = d3.color(color(resolveBusinessType(node)));
+  if (!base) return color(resolveBusinessType(node));
+  if (node.depth === 1) return base.brighter(0.4).formatHex();
+  if (node.depth === 2) return base.formatHex();
+  return base.copy({ opacity: 1 }).brighter(node.data.companyId === state.selectedCompanyId ? 0.35 : -0.15).formatHex();
+}
+
+function radialLabel(node) {
+  const maxLength = node.depth === 1 ? 20 : node.depth === 2 ? 18 : 14;
+  return trimLabel(node.data.name, maxLength);
+}
+
+function trimLabel(value, maxLength) {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
+}
+
+function centerHubLabel(root) {
+  return root?.data?.name === "All companies" ? "Companies" : trimLabel(root?.data?.name ?? "Directory", 10);
 }
 
 function showTooltip(event, node) {
