@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Top AI and Engineering Companies | D3 Treemap Directory</title>
+    <meta
+      name="description"
+      content="Curated GitHub Pages directory of top AI and engineering companies with D3 treemap exploration, company facts, engineering blogs, AI blogs, and filters by country and business type."
+    />
+    <meta
+      name="keywords"
+      content="top AI companies, top engineering companies, big tech companies, AI engineering companies, engineering blogs, AI blogs, technology company directory"
+    />
+    <meta property="og:title" content="Top AI and Engineering Companies" />
+    <meta
+      property="og:description"
+      content="Explore top AI and engineering companies with a D3 treemap, company facts, and official engineering or AI study links."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://dmoliveira.github.io/top-ai-engineering-companies/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://dmoliveira.github.io/top-ai-engineering-companies/" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Top AI and Engineering Companies",
+        "url": "https://dmoliveira.github.io/top-ai-engineering-companies/",
+        "description": "Curated directory of top AI, engineering, and product-first technology companies with official study links.",
+        "keywords": ["top AI companies", "engineering companies", "big tech companies", "engineering blogs", "AI blogs"]
+      }
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell shell--header">
+        <div>
+          <p class="eyebrow">GitHub Pages directory</p>
+          <h1>Top AI and Engineering Companies</h1>
+          <p class="lede">
+            Explore top AI companies, big tech companies, and product-first engineering organizations through a searchable D3 treemap with official engineering blogs, AI blogs, and core facts.
+          </p>
+        </div>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="index.html" aria-current="page">Directory</a>
+          <a href="methodology.html">Methodology</a>
+          <a href="support.html">Support</a>
+          <a href="https://github.com/dmoliveira/top-ai-engineering-companies">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="shell main-grid">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">Study companies by type</p>
+          <h2>Top engineering companies for learning, research, and career study</h2>
+          <p>
+            The treemap groups companies as <strong>business type → sub-type → company</strong>. Click a category to zoom, click a company tile to inspect facts, and use filters to narrow by country, field, or partial company name.
+          </p>
+        </div>
+        <div class="hero-stats" id="hero-stats">
+          <article>
+            <span class="stat-value" id="stat-companies">—</span>
+            <span class="stat-label">companies</span>
+          </article>
+          <article>
+            <span class="stat-value" id="stat-business-types">—</span>
+            <span class="stat-label">business types</span>
+          </article>
+          <article>
+            <span class="stat-value" id="stat-countries">—</span>
+            <span class="stat-label">countries</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="controls-card" aria-labelledby="controls-heading">
+        <div class="controls-header">
+          <div>
+            <p class="eyebrow">Filters</p>
+            <h2 id="controls-heading">Search top AI and engineering companies</h2>
+          </div>
+          <button id="reset-filters" class="secondary-button" type="button">Reset filters</button>
+        </div>
+        <form class="controls-grid" id="controls-form">
+          <label>
+            <span>Search by name or keyword</span>
+            <input id="search-input" name="search" type="search" placeholder="Stripe, DeepMind, ride hailing, genomics..." />
+          </label>
+          <label>
+            <span>Country</span>
+            <select id="country-select" name="country">
+              <option value="">All countries</option>
+            </select>
+          </label>
+          <label>
+            <span>Business type</span>
+            <select id="business-type-select" name="businessType">
+              <option value="">All business types</option>
+            </select>
+          </label>
+          <label>
+            <span>Sub-type</span>
+            <select id="sub-type-select" name="subType">
+              <option value="">All sub-types</option>
+            </select>
+          </label>
+          <label>
+            <span>Field tag</span>
+            <select id="tag-select" name="tag">
+              <option value="">All tags</option>
+            </select>
+          </label>
+        </form>
+        <div class="active-summary" id="active-summary" aria-live="polite">Loading company directory…</div>
+      </section>
+
+      <section class="treemap-card" aria-labelledby="treemap-heading">
+        <div class="treemap-header">
+          <div>
+            <p class="eyebrow">Treemap</p>
+            <h2 id="treemap-heading">D3 treemap of top AI and engineering companies</h2>
+          </div>
+          <div class="breadcrumb" id="breadcrumb">All companies</div>
+        </div>
+        <div id="legend" class="legend" aria-label="Treemap legend"></div>
+        <div id="treemap" class="treemap" role="region" aria-label="Interactive treemap of top AI and engineering companies"></div>
+      </section>
+
+      <aside class="details-card" aria-labelledby="details-heading">
+        <div class="details-header">
+          <div>
+            <p class="eyebrow">Company detail</p>
+            <h2 id="details-heading">Select a company</h2>
+          </div>
+        </div>
+        <div id="details-panel" class="details-panel">
+          <p class="empty-state">
+            Click a company tile to inspect core facts, official engineering blogs, AI blogs, and career or website links.
+          </p>
+        </div>
+      </aside>
+
+      <section class="study-card" aria-labelledby="study-heading">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Study links</p>
+            <h2 id="study-heading">Why this directory is useful</h2>
+          </div>
+        </div>
+        <div class="study-grid">
+          <article>
+            <h3>Engineering blog discovery</h3>
+            <p>Use this list to find high-signal engineering blogs from companies such as Netflix, Stripe, Uber, Grab, Cloudflare, and Figma.</p>
+          </article>
+          <article>
+            <h3>AI landscape scanning</h3>
+            <p>Compare frontier AI labs, big tech AI groups, and AI infrastructure leaders by country, business type, and specialization.</p>
+          </article>
+          <article>
+            <h3>Interview and career prep</h3>
+            <p>Study the product categories, official company links, and field tags behind the most relevant engineering-first organizations.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-grid">
+        <p>Curated static directory for learning and research.</p>
+        <p>
+          Built for GitHub Pages using D3.js, official links, and a product-first curation lens.
+        </p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

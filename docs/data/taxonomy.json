@@ -1,0 +1,83 @@
+{
+  "business_types": [
+    {
+      "id": "ai",
+      "label": "AI",
+      "sub_types": [
+        "Frontier Labs",
+        "Applied AI Platforms",
+        "AI Research and Open Models"
+      ]
+    },
+    {
+      "id": "big-tech",
+      "label": "Big Tech",
+      "sub_types": [
+        "Consumer Platforms",
+        "Search and Ads",
+        "Devices and Ecosystems",
+        "Streaming and Media"
+      ]
+    },
+    {
+      "id": "cloud-and-infrastructure",
+      "label": "Cloud and Infrastructure",
+      "sub_types": [
+        "Cloud Platforms",
+        "Data and AI Infrastructure",
+        "Edge and Networking"
+      ]
+    },
+    {
+      "id": "developer-tools",
+      "label": "Developer Tools",
+      "sub_types": [
+        "Code Hosting and Collaboration",
+        "Design and Product Development"
+      ]
+    },
+    {
+      "id": "fintech",
+      "label": "Fintech",
+      "sub_types": [
+        "Payments",
+        "Commerce Infrastructure",
+        "SMB Finance and Tax"
+      ]
+    },
+    {
+      "id": "mobility-and-logistics",
+      "label": "Mobility and Logistics",
+      "sub_types": [
+        "Ride Hailing",
+        "Travel and Hospitality",
+        "Delivery"
+      ]
+    },
+    {
+      "id": "enterprise-software",
+      "label": "Enterprise Software",
+      "sub_types": [
+        "CRM and Workflow",
+        "Analytics and Decision Platforms",
+        "Creative and Experience Platforms"
+      ]
+    },
+    {
+      "id": "health-and-bio",
+      "label": "Health and Bio",
+      "sub_types": [
+        "Genomics",
+        "Clinical AI"
+      ]
+    },
+    {
+      "id": "semiconductors-and-compute",
+      "label": "Semiconductors and Compute",
+      "sub_types": [
+        "AI Compute",
+        "Accelerated Hardware"
+      ]
+    }
+  ]
+}
