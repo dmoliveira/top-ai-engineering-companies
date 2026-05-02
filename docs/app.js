@@ -30,6 +30,7 @@ const elements = {
   relatedCompanies: document.getElementById("related-companies"),
   resultCount: document.getElementById("result-count"),
   modeIndicator: document.getElementById("mode-indicator"),
+  modeLabel: document.getElementById("mode-label"),
   vizHeading: document.getElementById("viz-heading"),
   vizSubtitle: document.getElementById("viz-subtitle"),
   statCompanies: document.getElementById("stat-companies"),
@@ -43,7 +44,6 @@ const elements = {
 
 const inputs = {
   search: document.getElementById("search-input"),
-  headerSearch: document.getElementById("header-search-input"),
   country: document.getElementById("country-select"),
   businessType: document.getElementById("business-type-select"),
   subType: document.getElementById("sub-type-select"),
@@ -74,8 +74,7 @@ elements.zoomOut.addEventListener("click", () => {
   renderVisualization(state.currentRoot);
 });
 
-inputs.search.addEventListener("input", (event) => setSearchValue(event.target.value.trim(), "rail"));
-inputs.headerSearch.addEventListener("input", (event) => setSearchValue(event.target.value.trim(), "header"));
+inputs.search.addEventListener("input", (event) => setSearchValue(event.target.value.trim()));
 
 ["country", "businessType", "subType", "tag"].forEach((key) => {
   inputs[key].addEventListener("change", (event) => {
@@ -103,7 +102,7 @@ async function init() {
   color.domain(uniqueSorted(companies.map((company) => company.business_type)));
   populateFilters(companies);
   updateHeroStats(companies);
-  state.selectedCompanyId = companies[0]?.id ?? null;
+  state.selectedCompanyId = null;
   updateViewModeUI();
   renderCategoryGrid();
   applyFilters();
@@ -123,16 +122,13 @@ function clearSelection() {
   renderVisualization(state.currentRoot);
 }
 
-function setSearchValue(value, source) {
+function setSearchValue(value) {
   state.filters.search = value;
-  if (source !== "rail") inputs.search.value = value;
-  if (source !== "header") inputs.headerSearch.value = value;
   applyFilters();
 }
 
 function syncInputs() {
   inputs.search.value = state.filters.search;
-  inputs.headerSearch.value = state.filters.search;
   inputs.country.value = state.filters.country;
   inputs.businessType.value = state.filters.businessType;
   inputs.subType.value = state.filters.subType;
@@ -264,27 +260,33 @@ function renderActiveFilterChips() {
 }
 
 function renderLegend() {
+  const filteredCounts = countBy(state.filteredCompanies, (company) => company.business_type);
   const businessTypes = uniqueSorted(state.companies.map((company) => company.business_type));
   elements.legend.replaceChildren();
   businessTypes.forEach((businessType) => {
     const item = createElement("span", { className: "legend-item" });
     const swatch = createElement("span", { className: "legend-swatch" });
     swatch.style.background = color(businessType);
-    item.append(swatch, document.createTextNode(businessType));
+    const count = filteredCounts.get(businessType) || 0;
+    item.classList.toggle("legend-item--muted", count === 0);
+    item.append(swatch, document.createTextNode(`${businessType} (${count})`));
     elements.legend.append(item);
   });
 }
 
 function renderCategoryGrid() {
-  const counts = new Map();
-  state.companies.forEach((company) => counts.set(company.business_type, (counts.get(company.business_type) || 0) + 1));
+  const totalCounts = countBy(state.companies, (company) => company.business_type);
+  const filteredCounts = countBy(state.filteredCompanies, (company) => company.business_type);
   const businessTypes = uniqueSorted(state.companies.map((company) => company.business_type));
   elements.categoryGrid.replaceChildren();
 
   businessTypes.forEach((businessType) => {
     const button = createElement("button", { className: "category-card-button", text: "" });
     button.type = "button";
+    const filteredCount = filteredCounts.get(businessType) || 0;
+    const totalCount = totalCounts.get(businessType) || 0;
     if (state.filters.businessType === businessType) button.classList.add("is-active");
+    if (filteredCount === 0) button.classList.add("is-dimmed");
     button.addEventListener("click", () => {
       state.filters.businessType = businessType;
       state.filters.subType = "";
@@ -295,7 +297,11 @@ function renderCategoryGrid() {
     const badge = createElement("span", { className: "category-badge", text: businessType.charAt(0) });
     badge.style.background = color(businessType);
     head.append(createElement("strong", { text: businessType }), badge);
-    button.append(head, createElement("p", { className: "category-meta", text: businessTypeMeta(businessType) }), createElement("span", { className: "category-count", text: `${counts.get(businessType) || 0} companies` }));
+    button.append(
+      head,
+      createElement("p", { className: "category-meta", text: businessTypeMeta(businessType) }),
+      createElement("span", { className: "category-count", text: `${filteredCount} shown • ${totalCount} total` })
+    );
     elements.categoryGrid.append(button);
   });
 }
@@ -318,7 +324,8 @@ function businessTypeMeta(value) {
 function updateViewModeUI() {
   const isRadial = state.viewMode === "radial";
   elements.modeIndicator.textContent = isRadial ? "◎" : "▦";
-  elements.vizHeading.textContent = isRadial ? "Explore Companies" : "Explore Companies";
+  elements.modeLabel.textContent = isRadial ? "Radial" : "Treemap";
+  elements.vizHeading.textContent = "Explore Companies";
   elements.vizSubtitle.textContent = isRadial ? "Interactive radial tree • Click nodes to explore" : "Interactive treemap • Click tiles to explore";
   viewButtons.forEach((button) => {
     const active = button.dataset.viewMode === state.viewMode;
@@ -357,7 +364,7 @@ function renderTreemap(root) {
   }
 
   const width = elements.visualizationHost.clientWidth || 960;
-  const height = Math.max(560, Math.min(860, Math.round(width * 0.7)));
+  const height = Math.max(480, Math.min(740, Math.round(width * 0.6)));
   d3.treemap().size([width, height]).paddingOuter(8).paddingTop((node) => (node.depth < 2 ? 30 : 18)).paddingInner(4)(root);
   const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]).attr("role", "presentation");
   const group = svg.append("g");
@@ -411,7 +418,7 @@ function renderRadialTree(root) {
   }
 
   const width = elements.visualizationHost.clientWidth || 960;
-  const height = Math.max(640, Math.min(980, Math.round(width * 0.92)));
+  const height = Math.max(540, Math.min(780, Math.round(width * 0.76)));
   const outerRadius = (Math.min(width, height) / 2 - 58) / state.radialScale;
   const layoutRoot = root.copy();
   d3.tree().size([2 * Math.PI, outerRadius]).separation((a, b) => (a.parent === b.parent ? 1 : 1.35) / Math.max(a.depth, 1))(layoutRoot);
@@ -529,7 +536,7 @@ function renderDetails() {
   const company = state.filteredCompanies.find((item) => item.id === state.selectedCompanyId) || state.companies.find((item) => item.id === state.selectedCompanyId);
   elements.clearSelection.disabled = !company;
   if (!company) {
-    elements.detailsPanel.replaceChildren(createElement("p", { className: "empty-state", text: "No company selected in the current filtered set." }));
+    elements.detailsPanel.replaceChildren(createElement("p", { className: "empty-state", text: "Select a company from the visualization to inspect its facts, engineering blogs, and official links." }));
     return;
   }
 
@@ -582,7 +589,8 @@ function renderRelatedCompanies() {
     return;
   }
 
-  const related = state.companies
+  const relatedPool = state.filteredCompanies.length ? state.filteredCompanies : state.companies;
+  const related = relatedPool
     .filter((company) => company.id !== selected.id)
     .map((company) => ({
       company,
@@ -651,6 +659,15 @@ function createElement(tagName, { className = "", text = "" } = {}) {
   return element;
 }
 
+function countBy(items, keyFn) {
+  const counts = new Map();
+  items.forEach((item) => {
+    const key = keyFn(item);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  return counts;
+}
+
 function initials(name) {
   return name
     .split(/\s+/)
@@ -687,7 +704,7 @@ function wrapText(textSelection, value, width, maxLines) {
     textSelection.append("tspan").attr("x", 12).attr("dy", index === 0 ? 0 : 14).text(line);
   });
   if (lines.length > maxLines) {
-    textSelection.select("tspan:last-child").text(`${lines[maxLines - 1].slice(0, -1)}…`);
+    textSelection.select("tspan:last-child").text(`${lines[maxLines - 1]}…`);
   }
 }
 
