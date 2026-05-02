@@ -3,19 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Top AI and Engineering Companies | D3 Radial Tree and Treemap Directory</title>
+    <title>Top AI and Engineering Companies | AI Engineering Directory</title>
     <meta
       name="description"
-      content="Curated GitHub Pages directory of top AI and engineering companies with D3 radial tree and treemap exploration, company facts, engineering blogs, AI blogs, and filters by country and business type."
+      content="Discover top AI and engineering companies through a refined GitHub Pages directory with a D3 radial tree, treemap view, filters, company profiles, and official engineering or AI blog links."
     />
     <meta
       name="keywords"
-      content="top AI companies, top engineering companies, big tech companies, AI engineering companies, engineering blogs, AI blogs, technology company directory"
+      content="top AI companies, AI engineering directory, top engineering companies, big tech companies, engineering blogs, AI blogs, technology company directory"
     />
     <meta property="og:title" content="Top AI and Engineering Companies" />
     <meta
       property="og:description"
-      content="Explore top AI and engineering companies with a D3 radial tree, treemap, company facts, and official engineering or AI study links."
+      content="Explore top AI and engineering companies with a polished radial-tree directory, filters, company facts, and official engineering or AI study links."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://dmoliveira.github.io/top-ai-engineering-companies/" />
@@ -23,153 +23,221 @@
     <link rel="canonical" href="https://dmoliveira.github.io/top-ai-engineering-companies/" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Top AI and Engineering Companies",
-        "url": "https://dmoliveira.github.io/top-ai-engineering-companies/",
-        "description": "Curated directory of top AI, engineering, and product-first technology companies with official study links.",
-        "keywords": ["top AI companies", "engineering companies", "big tech companies", "engineering blogs", "AI blogs"]
-      }
-    </script>
   </head>
   <body>
     <header class="site-header">
-      <div class="shell shell--header">
-        <div>
-          <p class="eyebrow">GitHub Pages directory</p>
-          <h1>Top AI and Engineering Companies</h1>
-          <p class="lede">
-            Explore top AI companies, big tech companies, and product-first engineering organizations through searchable D3 radial tree and treemap views with official engineering blogs, AI blogs, and core facts.
-          </p>
-        </div>
+      <div class="shell shell--topbar">
+        <a class="brand" href="index.html" aria-label="Top AI and Engineering Companies home">
+          <span class="brand-mark" aria-hidden="true">
+            <img src="assets/favicon.svg" alt="" />
+          </span>
+          <span class="brand-copy">
+            <strong>AI Engineering</strong>
+            <span>Directory</span>
+          </span>
+        </a>
+
         <nav class="top-nav" aria-label="Primary">
           <a href="index.html" aria-current="page">Directory</a>
           <a href="methodology.html">Methodology</a>
-          <a href="support.html">Support</a>
           <a href="https://github.com/dmoliveira/top-ai-engineering-companies">GitHub</a>
+          <a href="support.html">Support</a>
         </nav>
+
+        <div class="topbar-tools">
+          <label class="header-search">
+            <span class="sr-only">Search companies from header</span>
+            <input id="header-search-input" type="search" placeholder="Search companies, categories..." />
+          </label>
+          <div class="icon-button mode-status" aria-label="Current visualization mode" role="status">
+            <span id="mode-indicator">◎</span>
+          </div>
+        </div>
       </div>
     </header>
 
-    <main class="shell main-grid">
-      <section class="hero-card">
+    <main class="shell app-shell">
+      <section class="hero-card hero-card--dashboard">
         <div class="hero-copy">
-          <p class="eyebrow">Study companies by type</p>
-          <h2>Top engineering companies for learning, research, and career study</h2>
-          <p>
-            The visualizations group companies as <strong>business type → sub-type → company</strong>. Use the radial tree for hierarchy-first exploration, switch to treemap for denser scanning, and use filters to narrow by country, field, or partial company name.
+          <p class="eyebrow">AI Engineering Directory</p>
+          <h1>Discover the leading <span class="gradient-text">AI &amp; Engineering companies</span></h1>
+          <p class="lede">
+            Explore a curated directory of AI companies, engineering teams, and technology leaders worldwide. Navigate the radial tree to explore by industry, technology, or company type.
           </p>
         </div>
+
         <div class="hero-stats" id="hero-stats">
-          <article>
+          <article class="stat-card">
+            <span class="stat-icon" aria-hidden="true">▣</span>
             <span class="stat-value" id="stat-companies">—</span>
-            <span class="stat-label">companies</span>
+            <span class="stat-label">Companies</span>
+            <span class="stat-caption">Top AI &amp; engineering companies</span>
           </article>
-          <article>
+          <article class="stat-card">
+            <span class="stat-icon" aria-hidden="true">◈</span>
             <span class="stat-value" id="stat-business-types">—</span>
-            <span class="stat-label">business types</span>
+            <span class="stat-label">Business Types</span>
+            <span class="stat-caption">Different business categories</span>
           </article>
-          <article>
+          <article class="stat-card">
+            <span class="stat-icon" aria-hidden="true">◎</span>
             <span class="stat-value" id="stat-countries">—</span>
-            <span class="stat-label">countries</span>
+            <span class="stat-label">Countries</span>
+            <span class="stat-caption">Global coverage worldwide</span>
           </article>
         </div>
       </section>
 
-      <section class="controls-card" aria-labelledby="controls-heading">
-        <div class="controls-header">
-          <div>
-            <p class="eyebrow">Filters</p>
-            <h2 id="controls-heading">Search top AI and engineering companies</h2>
-          </div>
-          <button id="reset-filters" class="secondary-button" type="button">Reset filters</button>
-        </div>
-        <form class="controls-grid" id="controls-form">
-          <label>
-            <span>Search by name or keyword</span>
-            <input id="search-input" name="search" type="search" placeholder="Stripe, DeepMind, ride hailing, genomics..." />
-          </label>
-          <label>
-            <span>Country</span>
-            <select id="country-select" name="country">
-              <option value="">All countries</option>
-            </select>
-          </label>
-          <label>
-            <span>Business type</span>
-            <select id="business-type-select" name="businessType">
-              <option value="">All business types</option>
-            </select>
-          </label>
-          <label>
-            <span>Sub-type</span>
-            <select id="sub-type-select" name="subType">
-              <option value="">All sub-types</option>
-            </select>
-          </label>
-          <label>
-            <span>Field tag</span>
-            <select id="tag-select" name="tag">
-              <option value="">All tags</option>
-            </select>
-          </label>
-        </form>
-        <div class="active-summary" id="active-summary" aria-live="polite">Loading company directory…</div>
-      </section>
-
-      <section class="viz-card" aria-labelledby="viz-heading">
-        <div class="viz-header">
-          <div>
-            <p class="eyebrow" id="viz-eyebrow">Radial tree</p>
-            <h2 id="viz-heading">D3 radial tree of top AI and engineering companies</h2>
-          </div>
-          <div class="viz-controls">
-            <div class="view-switcher" aria-label="Visualization mode">
-              <button id="view-radial" class="view-button is-active" type="button" aria-pressed="true" data-view-mode="radial">Radial tree</button>
-              <button id="view-treemap" class="view-button" type="button" aria-pressed="false" data-view-mode="treemap">Treemap</button>
+      <section class="workspace-grid">
+        <aside class="filters-rail panel-card" aria-labelledby="controls-heading">
+          <div class="panel-header panel-header--tight">
+            <div>
+              <p class="eyebrow">Filters &amp; Search</p>
+              <h2 id="controls-heading">Refine the directory</h2>
             </div>
-            <div class="breadcrumb" id="breadcrumb">All companies</div>
+            <button id="reset-filters" class="secondary-button secondary-button--small" type="button">Reset all</button>
           </div>
-        </div>
-        <div id="legend" class="legend" aria-label="Visualization legend"></div>
-        <div id="visualization" class="viz-surface" role="region" aria-label="Interactive company visualization"></div>
+
+          <div class="rail-search">
+            <label>
+              <span class="sr-only">Search companies</span>
+              <input id="search-input" name="search" type="search" placeholder="Search companies..." />
+            </label>
+          </div>
+
+          <form class="filters-stack" id="controls-form">
+            <label>
+              <span>Business Type</span>
+              <select id="business-type-select" name="businessType">
+                <option value="">All business types</option>
+              </select>
+            </label>
+            <label>
+              <span>Sub-type</span>
+              <select id="sub-type-select" name="subType">
+                <option value="">All sub-types</option>
+              </select>
+            </label>
+            <label>
+              <span>Field Tag</span>
+              <select id="tag-select" name="tag">
+                <option value="">All field tags</option>
+              </select>
+            </label>
+            <label>
+              <span>Country</span>
+              <select id="country-select" name="country">
+                <option value="">All countries</option>
+              </select>
+            </label>
+          </form>
+
+          <div class="legend-panel">
+            <h3>Legend</h3>
+            <div id="legend" class="legend" aria-label="Visualization legend"></div>
+          </div>
+
+          <div class="results-card">
+            <strong id="result-count">—</strong>
+            <p id="active-summary" class="active-summary" aria-live="polite">Loading company directory…</p>
+          </div>
+
+          <div class="tip-card">
+            <h3>Tip</h3>
+            <p>Click any node in the radial tree to explore related companies and see detailed information.</p>
+          </div>
+        </aside>
+
+        <section class="canvas-panel panel-card" aria-labelledby="viz-heading">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Explore Companies</p>
+              <h2 id="viz-heading">Interactive company explorer</h2>
+              <p class="panel-subtitle" id="viz-subtitle">Interactive radial tree • Click nodes to explore</p>
+            </div>
+            <div class="viz-controls">
+              <div class="view-switcher" role="group" aria-label="Visualization mode">
+                <button id="view-radial" class="view-button is-active" type="button" aria-pressed="true" data-view-mode="radial">Radial tree</button>
+                <button id="view-treemap" class="view-button" type="button" aria-pressed="false" data-view-mode="treemap">Treemap</button>
+              </div>
+              <div class="breadcrumb" id="breadcrumb">All companies</div>
+            </div>
+          </div>
+
+          <div class="status-row">
+            <div id="active-filters" class="active-filters" aria-live="polite"></div>
+          </div>
+
+          <div id="visualization" class="viz-surface" role="region" aria-label="Interactive company visualization"></div>
+
+          <div class="viz-footer">
+            <div class="viz-actions">
+              <button id="fit-view" class="utility-button" type="button">Fit View</button>
+              <button id="zoom-out" class="utility-button" type="button" aria-label="Zoom out">−</button>
+              <button id="zoom-in" class="utility-button" type="button" aria-label="Zoom in">+</button>
+            </div>
+            <p class="viz-helper">Click on any category or company node to see detailed information.</p>
+          </div>
+        </section>
+
+        <aside class="inspector-rail">
+          <section class="details-card panel-card" aria-labelledby="details-heading">
+            <div class="panel-header panel-header--tight">
+              <div>
+                <p class="eyebrow">Selected Company</p>
+                <h2 id="details-heading">Inspector</h2>
+              </div>
+              <button id="clear-selection" class="secondary-button secondary-button--small" type="button">Clear</button>
+            </div>
+            <div id="details-panel" class="details-panel">
+              <p class="empty-state">Click a company node or tile to inspect core facts, official engineering blogs, AI blogs, and career links.</p>
+            </div>
+          </section>
+
+          <section class="related-card panel-card" aria-labelledby="related-heading">
+            <div class="panel-header panel-header--tight">
+              <div>
+                <p class="eyebrow">Related Companies</p>
+                <h2 id="related-heading">Nearby matches</h2>
+              </div>
+            </div>
+            <div id="related-companies" class="related-list"></div>
+          </section>
+        </aside>
       </section>
 
-      <aside class="details-card" aria-labelledby="details-heading">
-        <div class="details-header">
+      <section class="category-card panel-card" aria-labelledby="category-heading">
+        <div class="panel-header panel-header--tight">
           <div>
-            <p class="eyebrow">Company detail</p>
-            <h2 id="details-heading">Select a company</h2>
+            <p class="eyebrow">Explore by Category</p>
+            <h2 id="category-heading">Browse top AI and engineering company areas</h2>
           </div>
         </div>
-        <div id="details-panel" class="details-panel">
-          <p class="empty-state">
-            Click a company node or tile to inspect core facts, official engineering blogs, AI blogs, and career or website links.
-          </p>
-        </div>
-      </aside>
+        <div id="category-grid" class="category-grid"></div>
+      </section>
 
-      <section class="study-card" aria-labelledby="study-heading">
-        <div class="section-header">
+      <section class="study-card panel-card" aria-labelledby="study-heading">
+        <div class="panel-header panel-header--tight">
           <div>
-            <p class="eyebrow">Study links</p>
-            <h2 id="study-heading">Why this directory is useful</h2>
+            <p class="eyebrow">Why This Directory is Useful</p>
+            <h2 id="study-heading">High-signal ways to use the directory</h2>
           </div>
         </div>
         <div class="study-grid">
-          <article>
-            <h3>Engineering blog discovery</h3>
-            <p>Use this list to find high-signal engineering blogs from companies such as Netflix, Stripe, Uber, Grab, Cloudflare, and Figma.</p>
+          <article class="study-feature-card">
+            <h3>Engineering Blog Discovery</h3>
+            <p>Find high-quality engineering blogs from companies like Netflix, Stripe, Uber, Grab, Figma, and more.</p>
+            <a href="#details-heading">Explore blogs →</a>
           </article>
-          <article>
-            <h3>AI landscape scanning</h3>
-            <p>Compare frontier AI labs, big tech AI groups, and AI infrastructure leaders by country, business type, and specialization.</p>
+          <article class="study-feature-card">
+            <h3>AI Landscape Scanning</h3>
+            <p>Compare AI labs, big tech groups, and AI infrastructure leaders by country, business type, and specialization.</p>
+            <a href="#visualization">Scan landscape →</a>
           </article>
-          <article>
-            <h3>Interview and career prep</h3>
-            <p>Study the product categories, official company links, and field tags behind the most relevant engineering-first organizations.</p>
+          <article class="study-feature-card">
+            <h3>Interview &amp; Career Prep</h3>
+            <p>Study company links, product categories, official blogs, and field tags to prepare for roles at top organizations.</p>
+            <a href="#related-heading">Prepare now →</a>
           </article>
         </div>
       </section>
@@ -178,9 +246,7 @@
     <footer class="site-footer">
       <div class="shell footer-grid">
         <p>Curated static directory for learning and research.</p>
-        <p>
-          Built for GitHub Pages using D3.js, official links, and a product-first curation lens.
-        </p>
+        <p>Built for GitHub Pages using D3.js, official links, and a product-first curation lens.</p>
       </div>
     </footer>
 
