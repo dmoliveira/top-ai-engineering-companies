@@ -18,6 +18,7 @@ Created by **[Diego Marinho](https://dmoliveira.github.io/my-cv-public/cv/human/
 - filters by country, business type, sub-type, and field tags
 - company facts such as founded year, CEO, HQ, and employee scale bucket
 - official engineering blog links, AI blog links, career links, and source links
+- dedicated static company pages for SEO and deeper study
 - static GitHub Pages deployment from `/docs`
 
 ## Open the site locally
@@ -36,6 +37,12 @@ Open: [http://localhost:8000](http://localhost:8000)
 make validate
 ```
 
+## Build static company pages
+
+```bash
+make build-pages
+```
+
 ## Data notes
 
 - this is a curated directory, not a formal financial ranking
@@ -48,12 +55,14 @@ make validate
 ## Project structure
 
 - `docs/index.html`: main directory and visualization switcher UI
+- `docs/companies/`: generated static company detail pages
 - `docs/app.js`: D3 radial tree + treemap logic, filters, and company details
 - `docs/styles.css`: visual system and responsive layout
 - `docs/data/companies.json`: canonical company dataset
 - `docs/data/taxonomy.json`: controlled taxonomy values
 - `docs/methodology.html`: curation and inclusion notes
 - `docs/support.html`: support and contribution context
+- `scripts/build_company_pages.py`: static company-page and sitemap generator
 - `scripts/validate_data.py`: dataset validation
 
 ## Roadmap ideas

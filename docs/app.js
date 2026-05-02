@@ -677,7 +677,7 @@ function renderDetails() {
   });
   sourceSection.append(createElement("h3", { text: "Sources" }), sources, createElement("p", { className: "meta-line", text: `Last verified: ${company.last_verified_at}` }));
 
-  const profileButton = createPrimaryLink(company.website_url, "View Full Profile");
+  const profileButton = createPrimaryLink(companyPageUrl(company.id), "View Full Profile", { external: false });
   const tags = createElement("div", { className: "tag-list" });
   company.tags.forEach((tag) => tags.append(createElement("span", { className: "tag", text: tag })));
 
@@ -709,16 +709,20 @@ function renderRelatedCompanies() {
 
   related.forEach((company) => {
     const item = createElement("article", { className: "related-item" });
-    const button = document.createElement("button");
-    button.type = "button";
-    button.addEventListener("click", () => {
+    const contentButton = document.createElement("button");
+    contentButton.type = "button";
+    contentButton.addEventListener("click", () => {
       state.selectedCompanyId = company.id;
       renderDetails();
       renderRelatedCompanies();
       renderVisualization(state.currentRoot);
     });
-    button.append(createElement("h3", { text: company.name }), createElement("p", { className: "meta-line", text: `${company.sub_type[0]} • ${company.country}` }));
-    item.append(button);
+    contentButton.append(createElement("h3", { text: company.name }), createElement("p", { className: "meta-line", text: `${company.sub_type[0]} • ${company.country}` }));
+    const pageLink = document.createElement("a");
+    pageLink.href = companyPageUrl(company.id);
+    pageLink.className = "pill related-page-link";
+    pageLink.textContent = "Open page";
+    item.append(contentButton, pageLink);
     elements.relatedCompanies.append(item);
   });
 
@@ -733,15 +737,21 @@ function createSection(title, contentNode) {
   return section;
 }
 
-function createPrimaryLink(url, label) {
+function createPrimaryLink(url, label, { external = true } = {}) {
   if (!url) return createElement("span", { className: "primary-button", text: label });
   const link = document.createElement("a");
   link.className = "primary-button";
   link.href = url;
-  link.target = "_blank";
-  link.rel = "noreferrer";
+  if (external) {
+    link.target = "_blank";
+    link.rel = "noreferrer";
+  }
   link.textContent = label;
   return link;
+}
+
+function companyPageUrl(companyId) {
+  return `companies/${companyId}/`;
 }
 
 function createLinkChip(url, label) {
