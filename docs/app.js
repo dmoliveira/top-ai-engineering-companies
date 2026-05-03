@@ -7,6 +7,8 @@ const state = {
   selectedCompanyId: null,
   viewMode: "radial",
   radialScale: 1,
+  sortKey: "name",
+  sortDirection: "asc",
   filters: {
     search: "",
     country: "",
@@ -33,6 +35,7 @@ const elements = {
   modeLabel: document.getElementById("mode-label"),
   vizHeading: document.getElementById("viz-heading"),
   vizSubtitle: document.getElementById("viz-subtitle"),
+  vizHelper: document.getElementById("viz-helper"),
   statCompanies: document.getElementById("stat-companies"),
   statBusinessTypes: document.getElementById("stat-business-types"),
   statCountries: document.getElementById("stat-countries"),
@@ -324,10 +327,19 @@ function businessTypeMeta(value) {
 
 function updateViewModeUI() {
   const isRadial = state.viewMode === "radial";
+  const isTreemap = state.viewMode === "treemap";
+  const isCompare = state.viewMode === "compare";
   elements.modeIndicator.textContent = isRadial ? "◎" : "▦";
-  elements.modeLabel.textContent = isRadial ? "Radial" : "Treemap";
+  elements.modeLabel.textContent = isRadial ? "Radial" : isTreemap ? "Treemap" : "Compare";
   elements.vizHeading.textContent = "Explore Companies";
-  elements.vizSubtitle.textContent = isRadial ? "Interactive radial tree • Click nodes to explore" : "Interactive treemap • Click tiles to explore";
+  elements.vizSubtitle.textContent = isRadial
+    ? "Interactive radial tree • Click nodes to explore"
+    : isTreemap
+      ? "Interactive treemap • Click tiles to explore"
+      : "Sortable compare table • Scan and compare companies quickly";
+  elements.vizHelper.textContent = isRadial || isTreemap
+    ? "Click on any category or company node to see detailed information."
+    : "Select a row to inspect details, sort columns to compare companies, or open profile links.";
   viewButtons.forEach((button) => {
     const active = button.dataset.viewMode === state.viewMode;
     button.classList.toggle("is-active", active);
@@ -336,6 +348,7 @@ function updateViewModeUI() {
   const zoomDisabled = !isRadial;
   elements.zoomIn.disabled = zoomDisabled;
   elements.zoomOut.disabled = zoomDisabled;
+  elements.fitView.disabled = !isRadial;
 }
 
 function renderVisualization(root) {
@@ -345,9 +358,165 @@ function renderVisualization(root) {
   }
   if (state.viewMode === "radial") {
     renderRadialTree(root);
-  } else {
+  } else if (state.viewMode === "treemap") {
     renderTreemap(root);
+  } else {
+    renderCompareTable();
   }
+}
+
+function renderCompareTable() {
+  radialScene = null;
+  elements.visualizationHost.replaceChildren();
+  if (!state.filteredCompanies.length) {
+    renderEmptyVisualization("No companies match the current filters.");
+    elements.breadcrumb.textContent = "No matches";
+    return;
+  }
+
+  const wrapper = createElement("div", { className: "compare-table-wrap" });
+  const table = createElement("table", { className: "compare-table" });
+  const thead = document.createElement("thead");
+  const tbody = document.createElement("tbody");
+  const headerRow = document.createElement("tr");
+
+  const columns = [
+    ["name", "Company"],
+    ["business_type", "Business Type"],
+    ["sub_type", "Sub-type"],
+    ["country", "Country"],
+    ["hq_city", "HQ"],
+    ["founded_year", "Founded"],
+    ["employee_count_bucket", "Employees"],
+    ["actions", "Links"]
+  ];
+
+  columns.forEach(([key, label]) => {
+    const th = document.createElement("th");
+    if (key !== "actions") {
+      const button = createElement("button", { className: "table-sort-button", text: label });
+      button.type = "button";
+      button.addEventListener("click", () => toggleSort(key));
+      th.setAttribute("aria-sort", state.sortKey === key ? (state.sortDirection === "asc" ? "ascending" : "descending") : "none");
+      if (state.sortKey === key) {
+        button.append(document.createTextNode(state.sortDirection === "asc" ? " ↑" : " ↓"));
+        button.setAttribute("aria-pressed", "true");
+      }
+      th.append(button);
+    } else {
+      th.textContent = label;
+    }
+    headerRow.append(th);
+  });
+
+  thead.append(headerRow);
+
+  getSortedCompanies().forEach((company) => {
+    const row = document.createElement("tr");
+    row.dataset.companyId = company.id;
+    row.setAttribute("aria-selected", String(company.id === state.selectedCompanyId));
+    if (company.id === state.selectedCompanyId) {
+      row.classList.add("compare-row--selected");
+    }
+    row.addEventListener("click", () => {
+      state.selectedCompanyId = company.id;
+      renderDetails();
+      renderRelatedCompanies();
+      updateCompareSelectionState();
+      updateBreadcrumb();
+    });
+    row.tabIndex = 0;
+    row.setAttribute("role", "row");
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        state.selectedCompanyId = company.id;
+        renderDetails();
+        renderRelatedCompanies();
+        updateCompareSelectionState();
+        updateBreadcrumb();
+      }
+    });
+
+    row.append(
+      compareCell(company.name, `compare-company-cell`),
+      compareCell(company.business_type),
+      compareCell(company.sub_type[0]),
+      compareCell(company.country),
+      compareCell(company.hq_city),
+      compareCell(String(company.founded_year)),
+      compareCell(company.employee_count_bucket)
+    );
+
+    const actionCell = document.createElement("td");
+    const actions = createElement("div", { className: "compare-row-actions" });
+    const pageLink = document.createElement("a");
+    pageLink.href = companyPageUrl(company.id);
+    pageLink.className = "pill";
+    pageLink.textContent = "Profile";
+    pageLink.addEventListener("click", (event) => event.stopPropagation());
+    const siteLink = document.createElement("a");
+    siteLink.href = company.website_url;
+    siteLink.target = "_blank";
+    siteLink.rel = "noreferrer";
+    siteLink.className = "pill";
+    siteLink.textContent = "Website";
+    siteLink.addEventListener("click", (event) => event.stopPropagation());
+    actions.append(pageLink, siteLink);
+    actionCell.append(actions);
+    row.append(actionCell);
+    tbody.append(row);
+  });
+
+  table.append(thead, tbody);
+  wrapper.append(table);
+  elements.visualizationHost.append(wrapper);
+  updateBreadcrumb();
+}
+
+function updateCompareSelectionState() {
+  if (state.viewMode !== "compare") return;
+  const rows = elements.visualizationHost.querySelectorAll("tbody tr[data-company-id]");
+  rows.forEach((row) => {
+    const selected = row.dataset.companyId === state.selectedCompanyId;
+    row.classList.toggle("compare-row--selected", selected);
+    row.setAttribute("aria-selected", String(selected));
+  });
+}
+
+function compareCell(value, className = "") {
+  const cell = document.createElement("td");
+  if (className) cell.className = className;
+  cell.textContent = value;
+  return cell;
+}
+
+function toggleSort(key) {
+  if (state.sortKey === key) {
+    state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+  } else {
+    state.sortKey = key;
+    state.sortDirection = key === "founded_year" ? "desc" : "asc";
+  }
+  renderVisualization(state.currentRoot);
+}
+
+function getSortedCompanies() {
+  const items = [...state.filteredCompanies];
+  const direction = state.sortDirection === "asc" ? 1 : -1;
+  items.sort((left, right) => {
+    const leftValue = sortableValue(left, state.sortKey);
+    const rightValue = sortableValue(right, state.sortKey);
+    if (leftValue < rightValue) return -1 * direction;
+    if (leftValue > rightValue) return 1 * direction;
+    return left.name.localeCompare(right.name);
+  });
+  return items;
+}
+
+function sortableValue(company, key) {
+  if (key === "sub_type") return company.sub_type[0];
+  return company[key] ?? "";
 }
 
 function renderEmptyVisualization(message) {
