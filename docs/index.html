@@ -85,16 +85,20 @@
         </div>
       </section>
 
-      <section class="workspace-grid">
-        <aside class="filters-rail panel-card" aria-labelledby="controls-heading">
+      <section class="workspace-grid" id="workspace-grid">
+        <aside class="filters-rail panel-card" id="filters-rail" aria-labelledby="controls-heading">
           <div class="panel-header panel-header--tight">
             <div>
               <p class="eyebrow">Filters &amp; Search</p>
               <h2 id="controls-heading">Refine the directory</h2>
             </div>
-            <button id="reset-filters" class="secondary-button secondary-button--small" type="button">Reset all</button>
+            <div class="rail-header-actions">
+              <button id="reset-filters" class="secondary-button secondary-button--small" type="button">Reset all</button>
+              <button id="toggle-filters" class="icon-button" type="button" aria-expanded="true" aria-controls="filters-body" aria-label="Collapse filters rail">⟨</button>
+            </div>
           </div>
 
+          <div id="filters-body" class="filters-body">
           <div class="rail-search">
             <label>
               <span class="sr-only">Search companies</span>
@@ -142,6 +146,7 @@
           <div class="tip-card">
             <h3>Tip</h3>
             <p>Click any node in the radial tree to explore related companies and see detailed information.</p>
+          </div>
           </div>
         </aside>
 
