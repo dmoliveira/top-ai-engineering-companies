@@ -40,6 +40,10 @@ const elements = {
   statBusinessTypes: document.getElementById("stat-business-types"),
   statCountries: document.getElementById("stat-countries"),
   clearSelection: document.getElementById("clear-selection"),
+  workspaceGrid: document.getElementById("workspace-grid"),
+  filtersRail: document.getElementById("filters-rail"),
+  filtersBody: document.getElementById("filters-body"),
+  toggleFilters: document.getElementById("toggle-filters"),
   fitView: document.getElementById("fit-view"),
   zoomIn: document.getElementById("zoom-in"),
   zoomOut: document.getElementById("zoom-out")
@@ -60,9 +64,11 @@ document.body.appendChild(tooltip);
 
 let resizeTimer = null;
 let radialScene = null;
+let filtersCollapsed = false;
 
 document.getElementById("reset-filters").addEventListener("click", resetFilters);
 elements.clearSelection.addEventListener("click", clearSelection);
+elements.toggleFilters.addEventListener("click", toggleFiltersRail);
 elements.fitView.addEventListener("click", () => {
   state.radialScale = 1;
   renderVisualization(state.currentRoot);
@@ -124,6 +130,17 @@ function clearSelection() {
   renderDetails();
   renderRelatedCompanies();
   renderVisualization(state.currentRoot);
+}
+
+function toggleFiltersRail() {
+  filtersCollapsed = !filtersCollapsed;
+  elements.workspaceGrid.classList.toggle("workspace-grid--filters-collapsed", filtersCollapsed);
+  elements.filtersRail.classList.toggle("filters-rail--collapsed", filtersCollapsed);
+  elements.filtersBody.hidden = filtersCollapsed;
+  elements.toggleFilters.setAttribute("aria-expanded", String(!filtersCollapsed));
+  elements.toggleFilters.setAttribute("aria-label", filtersCollapsed ? "Expand filters rail" : "Collapse filters rail");
+  elements.toggleFilters.textContent = filtersCollapsed ? "⟩" : "⟨";
+  requestAnimationFrame(() => renderVisualization(state.currentRoot));
 }
 
 function setSearchValue(value) {
