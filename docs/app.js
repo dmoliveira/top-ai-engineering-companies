@@ -56,6 +56,7 @@ tooltip.className = "tooltip hidden";
 document.body.appendChild(tooltip);
 
 let resizeTimer = null;
+let radialScene = null;
 
 document.getElementById("reset-filters").addEventListener("click", resetFilters);
 elements.clearSelection.addEventListener("click", clearSelection);
@@ -356,6 +357,7 @@ function renderEmptyVisualization(message) {
 }
 
 function renderTreemap(root) {
+  radialScene = null;
   elements.visualizationHost.replaceChildren();
   if (!state.filteredCompanies.length) {
     renderEmptyVisualization("No companies match the current filters.");
@@ -410,8 +412,9 @@ function renderTreemap(root) {
 }
 
 function renderRadialTree(root) {
-  elements.visualizationHost.replaceChildren();
   if (!state.filteredCompanies.length) {
+    radialScene = null;
+    elements.visualizationHost.replaceChildren();
     renderEmptyVisualization("No companies match the current filters.");
     elements.breadcrumb.textContent = "No matches";
     return;
@@ -422,77 +425,81 @@ function renderRadialTree(root) {
   const outerRadius = Math.min(width, height) / 2 - 58;
   const layoutRoot = root.copy();
   d3.tree().size([2 * Math.PI, outerRadius]).separation((a, b) => (a.parent === b.parent ? 1 : 1.35) / Math.max(a.depth, 1))(layoutRoot);
+  const scene = ensureRadialScene();
+  const transitionDuration = radialMotionDuration(scene.initialRender);
+  const transition = transitionDuration ? d3.transition().duration(transitionDuration).ease(d3.easeCubicOut) : null;
+  const svg = scene.svg;
+  svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
 
-  const svg = d3.create("svg").attr("viewBox", [-width / 2, -height / 2, width, height]).attr("role", "presentation");
-  const defs = svg.append("defs");
-  defs
-    .append("filter")
-    .attr("id", "radial-node-glow")
-    .attr("x", "-60%")
-    .attr("y", "-60%")
-    .attr("width", "220%")
-    .attr("height", "220%")
-    .html(`
-      <feGaussianBlur stdDeviation="4" result="blur"></feGaussianBlur>
-      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.55 0"></feColorMatrix>
-      <feMerge>
-        <feMergeNode></feMergeNode>
-        <feMergeNode in="SourceGraphic"></feMergeNode>
-      </feMerge>
-    `);
+  const group = scene.group;
+  interruptRadialScene(scene);
+  applyMaybeTransition(group, transition).attr("transform", `scale(${state.radialScale})`);
 
-  const group = svg.append("g").attr("transform", `scale(${state.radialScale})`);
-  const ringCount = 5;
-  const rings = d3.range(1, ringCount + 1).map((index) => (outerRadius / ringCount) * index);
+  const maxDepth = d3.max(layoutRoot.descendants(), (node) => node.depth) || 1;
+  const rings = d3.range(1, maxDepth + 1).map((depth) => ({ depth, radius: (outerRadius / maxDepth) * depth }));
   const selectedPathKeys = getSelectedPathKeys(layoutRoot);
   const hasSelection = selectedPathKeys.size > 0;
 
-  group
-    .append("g")
-    .attr("class", "radial-grid")
+  const ringJoin = scene.gridLayer
     .selectAll("circle")
-    .data(rings)
-    .join("circle")
-    .attr("class", "radial-guide-ring")
-    .attr("r", (radius) => radius);
+    .data(rings, (ring) => ring.depth)
+    .join(
+      (enter) => enter.append("circle").attr("class", (ring) => `radial-guide-ring radial-guide-ring--depth-${ring.depth}`).attr("r", 0),
+      (update) => update,
+      (exit) => applyMaybeTransition(exit, transition).attr("opacity", 0).remove()
+    )
+    .attr("class", (ring) => `radial-guide-ring radial-guide-ring--depth-${ring.depth}`);
+  applyMaybeTransition(ringJoin, transition).attr("r", (ring) => ring.radius).attr("opacity", 1);
 
-  group
-    .append("g")
-    .attr("class", "radial-axes")
+  const axisJoin = scene.axisLayer
     .selectAll("line")
-    .data(layoutRoot.children ?? [])
-    .join("line")
-    .attr("class", "radial-axis")
+    .data(layoutRoot.children ?? [], (node) => nodeKey(node))
+    .join(
+      (enter) => enter.append("line").attr("class", "radial-axis").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 0),
+      (update) => update,
+      (exit) => applyMaybeTransition(exit, transition).attr("opacity", 0).remove()
+    );
+  applyMaybeTransition(axisJoin, transition)
     .attr("x1", 0)
     .attr("y1", 0)
     .attr("x2", (node) => Math.cos(node.x - Math.PI / 2) * (outerRadius + 10))
-    .attr("y2", (node) => Math.sin(node.x - Math.PI / 2) * (outerRadius + 10));
+    .attr("y2", (node) => Math.sin(node.x - Math.PI / 2) * (outerRadius + 10))
+    .attr("opacity", 1);
 
-  const centerHub = group.append("g").attr("class", "radial-center-hub");
-  centerHub.append("circle").attr("class", "radial-center-glow").attr("r", Math.max(outerRadius * 0.18, 54));
-  centerHub.append("circle").attr("class", "radial-center-ring radial-center-ring--outer").attr("r", 32);
-  centerHub.append("circle").attr("class", "radial-center-ring radial-center-ring--inner").attr("r", 20);
-  centerHub.append("text").attr("class", "radial-center-label").attr("text-anchor", "middle").attr("dy", "0.34em").text(centerHubLabel(root));
+  applyMaybeTransition(scene.hubGlow, transition).attr("r", Math.max(outerRadius * 0.18, 54));
+  scene.hubLabel.text(centerHubLabel(root));
 
-  group
-    .append("g")
+  const linkJoin = scene.linkLayer
     .selectAll("path")
-    .data(layoutRoot.links())
-    .join("path")
+    .data(layoutRoot.links(), (link) => linkKey(link))
+    .join(
+      (enter) => enter.append("path").attr("class", (link) => `radial-link radial-link--depth-${link.target.depth}`).attr("opacity", 0),
+      (update) => update,
+      (exit) => applyMaybeTransition(exit, transition).attr("opacity", 0).remove()
+    )
     .attr(
       "class",
       (link) =>
         `radial-link radial-link--depth-${link.target.depth} ${
           selectedPathKeys.has(nodeKey(link.target)) ? "radial-link--selected-path" : ""
         } ${hasSelection && !selectedPathKeys.has(nodeKey(link.target)) ? "radial-link--dimmed" : ""}`
-    )
-    .attr("d", d3.linkRadial().angle((d) => d.x).radius((d) => d.y));
+    );
+  applyMaybeTransition(linkJoin, transition).attr("d", d3.linkRadial().angle((d) => d.x).radius((d) => d.y)).attr("opacity", 1);
 
-  const nodes = group
-    .append("g")
+  const nodes = scene.nodeLayer
     .selectAll("g")
-    .data(layoutRoot.descendants().filter((node) => node.depth > 0))
-    .join("g")
+    .data(layoutRoot.descendants().filter((node) => node.depth > 0), (node) => joinKey(node))
+    .join(
+      (enter) => {
+        const nodeEnter = enter.append("g").attr("transform", "rotate(0) translate(0,0)").attr("opacity", 0);
+        nodeEnter.append("circle").attr("class", "radial-node-halo");
+        nodeEnter.append("circle").attr("class", "radial-node-core");
+        nodeEnter.append("text").attr("class", "radial-label").attr("dy", "0.31em");
+        return nodeEnter;
+      },
+      (update) => update,
+      (exit) => applyMaybeTransition(exit, transition).attr("opacity", 0).remove()
+    )
     .attr(
       "class",
       (node) =>
@@ -514,23 +521,21 @@ function renderRadialTree(root) {
     .on("blur", hideTooltip)
     .on("mouseleave", hideTooltip);
 
-  nodes
-    .append("circle")
-    .attr("class", "radial-node-halo")
+  applyMaybeTransition(nodes, transition)
+    .attr("transform", (node) => radialNodeTransform(node))
+    .attr("opacity", 1);
+
+  applyMaybeTransition(nodes.select(".radial-node-halo"), transition)
     .attr("r", (node) => haloRadius(node))
     .attr("fill", (node) => color(resolveBusinessType(node)))
     .attr("opacity", (node) => haloOpacity(node));
 
-  nodes
-    .append("circle")
-    .attr("class", "radial-node-core")
+  applyMaybeTransition(nodes.select(".radial-node-core"), transition)
     .attr("r", (node) => coreRadius(node))
     .attr("fill", (node) => nodeFill(node))
     .attr("filter", (node) => (node.depth <= 1 || node.data.companyId === state.selectedCompanyId ? "url(#radial-node-glow)" : null));
 
-  nodes
-    .filter((node) => node.depth < 3 || shouldShowCompanyLabels() || node.data.companyId === state.selectedCompanyId)
-    .append("text")
+  const labelSelection = nodes.select(".radial-label")
     .attr(
       "class",
       (node) =>
@@ -540,19 +545,25 @@ function renderRadialTree(root) {
           hasSelection && !selectedPathKeys.has(nodeKey(node)) ? "radial-label--dimmed" : ""
         }`
     )
-    .attr("dy", "0.31em")
     .attr("x", (node) => (node.x < Math.PI ? 11 : -11))
     .attr("text-anchor", (node) => (node.x < Math.PI ? "start" : "end"))
     .attr("transform", (node) => (node.x >= Math.PI ? "rotate(180)" : null))
     .attr("font-weight", (node) => (node.children ? 680 : 440))
     .text((node) => radialLabel(node));
+  applyMaybeTransition(labelSelection, transition)
+    .attr("opacity", (node) => (shouldRenderLabel(node) ? 1 : 0));
 
   updateBreadcrumb();
   elements.visualizationHost.appendChild(svg.node());
+  scene.initialRender = false;
 }
 
 function shouldShowCompanyLabels() {
   return state.filteredCompanies.length <= 28 || Object.values(state.filters).some(Boolean);
+}
+
+function shouldRenderLabel(node) {
+  return node.depth < 3 || shouldShowCompanyLabels() || node.data.companyId === state.selectedCompanyId;
 }
 
 function keyboardSelect(event, node) {
@@ -605,12 +616,79 @@ function centerHubLabel(root) {
   return root?.data?.name === "All companies" ? "Companies" : trimLabel(root?.data?.name ?? "Directory", 10);
 }
 
+function radialNodeTransform(node) {
+  return `rotate(${(node.x * 180) / Math.PI - 90}) translate(${node.y},0)`;
+}
+
+function radialMotionDuration(initialRender) {
+  if (initialRender) return 0;
+  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return 0;
+  return 180;
+}
+
+function applyMaybeTransition(selection, transition) {
+  return transition ? selection.transition(transition) : selection;
+}
+
+function interruptRadialScene(scene) {
+  scene.svg.selectAll("*").interrupt();
+}
+
+function ensureRadialScene() {
+  const existing = elements.visualizationHost.querySelector('svg[data-radial-scene="true"]');
+  if (existing && radialScene) {
+    return radialScene;
+  }
+
+  elements.visualizationHost.replaceChildren();
+  const svg = d3.create("svg").attr("data-radial-scene", "true").attr("role", "presentation");
+  const defs = svg.append("defs");
+  defs
+    .append("filter")
+    .attr("id", "radial-node-glow")
+    .attr("x", "-60%")
+    .attr("y", "-60%")
+    .attr("width", "220%")
+    .attr("height", "220%")
+    .html(`
+      <feGaussianBlur stdDeviation="4" result="blur"></feGaussianBlur>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.55 0"></feColorMatrix>
+      <feMerge>
+        <feMergeNode></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    `);
+
+  const group = svg.append("g");
+  const gridLayer = group.append("g").attr("class", "radial-grid");
+  const axisLayer = group.append("g").attr("class", "radial-axes");
+  const hubLayer = group.append("g").attr("class", "radial-center-hub");
+  const hubGlow = hubLayer.append("circle").attr("class", "radial-center-glow").attr("r", 0);
+  hubLayer.append("circle").attr("class", "radial-center-ring radial-center-ring--outer").attr("r", 32);
+  hubLayer.append("circle").attr("class", "radial-center-ring radial-center-ring--inner").attr("r", 20);
+  const hubLabel = hubLayer.append("text").attr("class", "radial-center-label").attr("text-anchor", "middle").attr("dy", "0.34em");
+  const linkLayer = group.append("g");
+  const nodeLayer = group.append("g");
+
+  elements.visualizationHost.appendChild(svg.node());
+  radialScene = { svg, group, gridLayer, axisLayer, hubGlow, hubLabel, linkLayer, nodeLayer, initialRender: true };
+  return radialScene;
+}
+
 function nodeKey(node) {
   return node
     .ancestors()
     .reverse()
     .map((item) => item.data.name)
     .join(" > ");
+}
+
+function joinKey(node) {
+  return node.data.companyId ?? nodeKey(node);
+}
+
+function linkKey(link) {
+  return `${nodeKey(link.source)} -> ${nodeKey(link.target)}`;
 }
 
 function getSelectedPathKeys(root) {

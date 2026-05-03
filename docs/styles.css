@@ -625,6 +625,18 @@ p {
   stroke-dasharray: 2 8;
 }
 
+.radial-guide-ring--depth-1 {
+  stroke: rgba(103, 152, 245, 0.16);
+}
+
+.radial-guide-ring--depth-2 {
+  stroke: rgba(119, 136, 170, 0.2);
+}
+
+.radial-guide-ring--depth-3 {
+  stroke: rgba(136, 148, 171, 0.24);
+}
+
 .radial-axis {
   stroke: rgba(96, 117, 148, 0.14);
   stroke-width: 1;
@@ -712,6 +724,17 @@ p {
 
 .radial-label--dimmed {
   opacity: 0.2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node rect,
+  .radial-node circle,
+  .radial-node-halo,
+  .radial-node-core,
+  .radial-link,
+  .radial-label {
+    transition: none;
+  }
 }
 
 .radial-node:hover .radial-node-halo,
